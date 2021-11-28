@@ -67,26 +67,6 @@ if systemctl is-enabled ModemManager.service &> /dev/null; then
     warn "ModemManager service is enabled. This might cause issue when using serial devices."
 fi
 
-# Detect wrong docker logger config
-if [ ! -f "$FILE_DOCKER_CONF" ]; then
-  # Write default configuration
-  info "Creating default docker daemon configuration $FILE_DOCKER_CONF"
-  curl -sL ${URL_DOCKER_DAEMON} > "${FILE_DOCKER_CONF}"
-
-  # Restart Docker service
-  info "Restarting docker service"
-  systemctl restart "$SERVICE_DOCKER"
-else
-  STORAGE_DRIVER=$(docker info -f "{{json .}}" | jq -r -e .Driver)
-  LOGGING_DRIVER=$(docker info -f "{{json .}}" | jq -r -e .LoggingDriver)
-  if [[ "$STORAGE_DRIVER" != "overlay2" ]]; then 
-    warn "Docker is using $STORAGE_DRIVER and not 'overlay2' as the storage driver, this is not supported."
-  fi
-  if [[ "$LOGGING_DRIVER"  != "journald" ]]; then 
-    warn "Docker is using $LOGGING_DRIVER and not 'journald' as the logging driver, this is not supported."
-  fi
-fi
-
 # Check dmesg access
 if [[ "$(sysctl --values kernel.dmesg_restrict)" != "0" ]]; then
     info "Fix kernel dmesg restriction"
